@@ -1,0 +1,3 @@
+"""
+SafeZone Backend Application Package
+"""

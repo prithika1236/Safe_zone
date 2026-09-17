@@ -1,0 +1,6 @@
+name,category,latitude,longitude,address,contact_number,is_verified,is_active
+Central Police Station,POLICE_STATION,12.971598,77.594562,Cubbon Park Road Bangalore,+918022942222,true,true
+Victoria General Hospital,HOSPITAL,12.964400,77.575000,Fort Road City Market Bangalore,+918026701150,true,true
+City Emergency Shelter Center,SHELTER,12.935000,77.620000,Koramangala 4th Block Bangalore,+918025530000,true,true
+South Zone Fire Station,FIRE_STATION,12.925000,77.585000,Jayanagar 4th Block Bangalore,+918022971500,true,true
+Public Safe Assistance Desk,HELP_DESK,12.978000,77.640000,Indiranagar 100ft Road Bangalore,+918025280000,true,true

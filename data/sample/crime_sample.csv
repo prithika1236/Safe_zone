@@ -1,0 +1,11 @@
+incident_number,category,severity,incident_time,latitude,longitude,description
+CR-2026-001,Theft,2,2026-08-10T14:30:00Z,12.971598,77.594562,Bicycle theft near commercial market
+CR-2026-002,Robbery,4,2026-08-11T21:15:00Z,12.978350,77.640838,Armed robbery at convenience store
+CR-2026-003,Assault,3,2026-08-12T23:45:00Z,12.935192,77.624480,Physical altercation outside transit hub
+CR-2026-004,Vandalism,1,2026-08-13T03:10:00Z,12.927923,77.627107,Graffiti and property damage on public building
+CR-2026-005,Burglary,4,2026-08-14T02:20:00Z,12.969800,77.749900,Residential burglary during night hours
+CR-2026-006,Motor Vehicle Theft,3,2026-08-15T18:40:00Z,13.003300,77.564000,Two-wheeler stolen from parking facility
+CR-2026-007,Harassment,2,2026-08-16T19:50:00Z,12.934500,77.610100,Verbal harassment reported near bus stop
+CR-2026-008,Homicide,5,2026-08-17T01:30:00Z,12.985000,77.605000,Fatal assault incident under investigation
+CR-2026-009,Shoplifting,1,2026-08-18T16:00:00Z,12.972000,77.608000,Shoplifting reported at retail center
+CR-2026-010,Drug Offense,3,2026-08-19T22:10:00Z,12.955000,77.650000,Narcotics possession and distribution report
