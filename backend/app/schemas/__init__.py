@@ -32,6 +32,12 @@ from app.schemas.patrol import (
     PoliceOfficerResponse,
     PoliceOfficerUpdateRequest,
 )
+from app.schemas.prp_candidate import (
+    CandidateGenerationConfigSchema,
+    CandidateGenerationRequest,
+    CandidatePRPResponse,
+    PredefinedLocationSchema,
+)
 from app.schemas.risk import (
     LocationRiskRequest,
     RiskScoreBreakdownResponse,
@@ -75,4 +81,9 @@ __all__ = [
     "LocationRiskRequest",
     "RiskScoreBreakdownResponse",
     "RiskScoreRecordRead",
+    # PRP Candidate
+    "PredefinedLocationSchema",
+    "CandidateGenerationConfigSchema",
+    "CandidatePRPResponse",
+    "CandidateGenerationRequest",
 ]
