@@ -1,3 +1,4 @@
+from app.services.assignment_service import AssignmentService
 from app.services.auth_service import AuthService
 from app.services.crime_service import CrimeService
 from app.services.help_point_service import HelpPointService
@@ -26,6 +27,7 @@ __all__ = [
     "RoutingService",
     "RiskService",
     "OptimizationService",
+    "AssignmentService",
     "Coordinate",
     "BoundingBox",
     "RouteResult",

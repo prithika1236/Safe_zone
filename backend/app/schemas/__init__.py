@@ -1,3 +1,11 @@
+from app.schemas.assignment import (
+    AssignmentMatchResponse,
+    AssignmentReassignRequest,
+    AutoAssignmentRequest,
+    AutoAssignmentResponse,
+    ManualAssignmentRequest,
+    PaginatedAssignmentsResponse,
+)
 from app.schemas.auth import (
     CitizenRegisterRequest,
     TokenResponse,
@@ -105,4 +113,11 @@ __all__ = [
     "PRPStatusUpdateRequest",
     "PaginatedOptimizationRunsResponse",
     "PaginatedPRPLocationsResponse",
+    # Assignment
+    "AutoAssignmentRequest",
+    "ManualAssignmentRequest",
+    "AssignmentReassignRequest",
+    "AssignmentMatchResponse",
+    "AutoAssignmentResponse",
+    "PaginatedAssignmentsResponse",
 ]

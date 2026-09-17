@@ -1,5 +1,11 @@
-"""Optimization, risk scoring, coverage modeling, and PRP solver algorithms for SafeZone."""
+"""Optimization, risk scoring, coverage modeling, PRP solver, and assignment algorithms for SafeZone."""
 
+from app.optimization.assignment import (
+    AssignmentMatch,
+    PatrolResource,
+    PRPResource,
+    assign_patrols_to_prps,
+)
 from app.optimization.candidate_generator import (
     CandidateGenerationConfig,
     CandidatePRP,
@@ -58,4 +64,9 @@ __all__ = [
     "SelectedPRPItem",
     "PRPOptimizationResult",
     "optimize_prp_coverage",
+    # Patrol Assignment
+    "PatrolResource",
+    "PRPResource",
+    "AssignmentMatch",
+    "assign_patrols_to_prps",
 ]
