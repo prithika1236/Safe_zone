@@ -6,6 +6,9 @@ from app.api.auth import router as auth_router
 from app.api.crimes import router as crimes_router
 from app.api.help_points import router as help_points_router
 from app.api.optimization import router as optimization_router
+from app.api.sos import admin_router as admin_sos_router
+from app.api.sos import citizen_router as citizen_sos_router
+from app.api.sos import police_router as police_sos_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -27,3 +30,8 @@ api_router.include_router(optimization_router)
 # Patrol Assignment endpoints
 api_router.include_router(admin_assignment_router)
 api_router.include_router(police_assignment_router)
+
+# Emergency SOS Dispatch endpoints
+api_router.include_router(citizen_sos_router)
+api_router.include_router(police_sos_router)
+api_router.include_router(admin_sos_router)

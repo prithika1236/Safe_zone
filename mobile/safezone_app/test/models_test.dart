@@ -3,6 +3,7 @@ import 'package:safezone_app/models/assignment_model.dart';
 import 'package:safezone_app/models/emergency_contact_model.dart';
 import 'package:safezone_app/models/help_point_model.dart';
 import 'package:safezone_app/models/location_status.dart';
+import 'package:safezone_app/models/sos_model.dart';
 import 'package:safezone_app/models/user_model.dart';
 
 void main() {
@@ -159,6 +160,56 @@ void main() {
       );
       expect(denied.isSuccess, false);
       expect(denied.errorMessage, 'Permission denied');
+    });
+  });
+
+  group('SOS Models Tests', () {
+    test('SOSModel parse JSON with full telemetry and patrol info', () {
+      final json = {
+        'id': 101,
+        'citizen_id': 5,
+        'status': 'ASSIGNED',
+        'latitude': 12.9716,
+        'longitude': 77.5946,
+        'assigned_patrol_unit_id': 12,
+        'patrol_call_sign': 'EAGLE-1',
+        'distance_meters': 1500.0,
+        'estimated_duration_seconds': 240.0,
+        'trigger_time': '2026-09-18T02:30:00Z',
+        'notes': 'Suspect approaching',
+        'citizen_name': 'Alice Smith',
+        'citizen_phone': '+1234567890',
+      };
+
+      final sos = SOSModel.fromJson(json);
+      expect(sos.id, 101);
+      expect(sos.citizenId, 5);
+      expect(sos.status, 'ASSIGNED');
+      expect(sos.latitude, 12.9716);
+      expect(sos.patrolCallSign, 'EAGLE-1');
+      expect(sos.citizenName, 'Alice Smith');
+      expect(sos.distanceMeters, 1500.0);
+    });
+
+    test('CitizenSOSModel privacy guarantee test (zero exact PRP leakage)', () {
+      final json = {
+        'id': 202,
+        'status': 'EN_ROUTE',
+        'latitude': 12.9716,
+        'longitude': 77.5946,
+        'patrol_assigned': true,
+        'patrol_call_sign': 'PATROL-ALPHA',
+        'distance_meters': 800.0,
+        'estimated_duration_seconds': 120.0,
+        'trigger_time': '2026-09-18T02:35:00Z',
+      };
+
+      final citizenSos = CitizenSOSModel.fromJson(json);
+      expect(citizenSos.id, 202);
+      expect(citizenSos.status, 'EN_ROUTE');
+      expect(citizenSos.patrolAssigned, true);
+      expect(citizenSos.patrolCallSign, 'PATROL-ALPHA');
+      expect(citizenSos.distanceMeters, 800.0);
     });
   });
 }

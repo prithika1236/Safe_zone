@@ -4,6 +4,7 @@ import '../core/storage_service.dart';
 import '../models/emergency_contact_model.dart';
 import '../models/help_point_model.dart';
 import '../models/location_status.dart';
+import '../models/sos_model.dart';
 import '../services/location_service.dart';
 
 class CitizenProvider extends ChangeNotifier {
@@ -14,11 +15,12 @@ class CitizenProvider extends ChangeNotifier {
   List<HelpPointModel> _helpPoints = [];
   List<EmergencyContactModel> _emergencyContacts = [];
   LocationResult? _currentLocation;
+  CitizenSOSModel? _activeSOS;
 
   bool _isLoadingHelpPoints = false;
   bool _isSOSTriggered = false;
   DateTime? _sosTriggeredAt;
-  String _sosStatus = 'READY'; // READY, BROADCASTING, DISPATCH_CONNECTING, CANCELLED
+  String _sosStatus = 'READY'; // READY, PENDING, ASSIGNED, ACCEPTED, EN_ROUTE, ARRIVED, RESOLVED, CANCELLED
   String? _errorMessage;
 
   CitizenProvider(this._apiClient, this._storageService, this._locationService) {
@@ -28,6 +30,7 @@ class CitizenProvider extends ChangeNotifier {
   List<HelpPointModel> get helpPoints => _helpPoints;
   List<EmergencyContactModel> get emergencyContacts => _emergencyContacts;
   LocationResult? get currentLocation => _currentLocation;
+  CitizenSOSModel? get activeSOS => _activeSOS;
   bool get isLoadingHelpPoints => _isLoadingHelpPoints;
   bool get isSOSTriggered => _isSOSTriggered;
   DateTime? get sosTriggeredAt => _sosTriggeredAt;
@@ -38,6 +41,7 @@ class CitizenProvider extends ChangeNotifier {
     await Future.wait([
       updateLocation(),
       loadEmergencyContacts(),
+      fetchActiveSOS(),
     ]);
 
     if (_currentLocation?.isSuccess == true) {
@@ -145,40 +149,74 @@ class CitizenProvider extends ChangeNotifier {
 
   // --- SOS Panic Operations ---
 
-  Future<void> triggerSOS() async {
+  Future<void> fetchActiveSOS() async {
+    try {
+      final response = await _apiClient.get('/sos/active');
+      if (response != null && response is Map<String, dynamic>) {
+        _activeSOS = CitizenSOSModel.fromJson(response);
+        _isSOSTriggered = true;
+        _sosTriggeredAt = _activeSOS!.triggerTime;
+        _sosStatus = _activeSOS!.status;
+      } else {
+        _activeSOS = null;
+        _isSOSTriggered = false;
+        _sosStatus = 'READY';
+      }
+    } catch (_) {
+      // No active SOS or unauthenticated
+    }
+    notifyListeners();
+  }
+
+  Future<bool> triggerSOS({String? notes}) async {
     _isSOSTriggered = true;
     _sosTriggeredAt = DateTime.now();
-    _sosStatus = 'BROADCASTING_DISTRESS';
+    _sosStatus = 'PENDING';
+    _errorMessage = null;
     notifyListeners();
 
     // Ensure we have current GPS coordinates
     await updateLocation();
 
-    // Attempt backend SOS dispatch trigger if endpoint is available
-    if (_currentLocation?.isSuccess == true) {
-      try {
-        await _apiClient.post('/sos/trigger', body: {
-          'latitude': _currentLocation!.latitude,
-          'longitude': _currentLocation!.longitude,
-          'triggered_at': _sosTriggeredAt!.toIso8601String(),
-        });
-        _sosStatus = 'DISTRESS_TRANSMITTED';
-      } catch (_) {
-        // Backend SOS endpoint is in preparation for next stage.
-        // Transparently indicate live broadcast without faking completed dispatch.
-        _sosStatus = 'LOCAL_BROADCAST_ACTIVE';
-      }
-    } else {
-      _sosStatus = 'LOCATION_PENDING';
-    }
+    final lat = _currentLocation?.latitude ?? 12.9716;
+    final lon = _currentLocation?.longitude ?? 77.5946;
 
-    notifyListeners();
+    try {
+      final response = await _apiClient.post('/sos/trigger', body: {
+        'latitude': lat,
+        'longitude': lon,
+        'notes': notes,
+      });
+
+      if (response != null && response is Map<String, dynamic>) {
+        _activeSOS = CitizenSOSModel.fromJson(response);
+        _sosStatus = _activeSOS!.status;
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      notifyListeners();
+      return false;
+    } catch (_) {
+      _errorMessage = 'Emergency distress signal transmission failed.';
+      notifyListeners();
+      return false;
+    }
   }
 
-  void cancelSOS() {
+  Future<bool> cancelSOS() async {
+    if (_activeSOS != null) {
+      try {
+        await _apiClient.post('/sos/${_activeSOS!.id}/cancel');
+      } catch (_) {}
+    }
     _isSOSTriggered = false;
+    _activeSOS = null;
     _sosTriggeredAt = null;
     _sosStatus = 'READY';
     notifyListeners();
+    return true;
   }
 }

@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../models/assignment_model.dart';
 import '../models/location_status.dart';
+import '../models/sos_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/police_provider.dart';
 import '../services/location_service.dart';
@@ -38,6 +39,7 @@ class _PoliceHomeScreenState extends State<PoliceHomeScreen> {
     final policeProvider = Provider.of<PoliceProvider>(context);
     final officer = authProvider.currentUser?.policeOfficer;
     final assignment = policeProvider.activeAssignment;
+    final activeSOS = policeProvider.activeSOS;
     final location = policeProvider.currentLocation;
 
     const LatLng defaultCenter = LatLng(12.9716, 77.5946);
@@ -47,8 +49,11 @@ class _PoliceHomeScreenState extends State<PoliceHomeScreen> {
     final LatLng? prpLatLng = (assignment?.prp != null)
         ? LatLng(assignment!.prp!.latitude, assignment.prp!.longitude)
         : null;
+    final LatLng? sosLatLng = (activeSOS != null)
+        ? LatLng(activeSOS.latitude, activeSOS.longitude)
+        : null;
 
-    final LatLng mapCenter = prpLatLng ?? officerLatLng ?? defaultCenter;
+    final LatLng mapCenter = sosLatLng ?? prpLatLng ?? officerLatLng ?? defaultCenter;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -144,18 +149,25 @@ class _PoliceHomeScreenState extends State<PoliceHomeScreen> {
                 onDismiss: () => policeProvider.clearMessages(),
               ),
 
-            // 3. Active PRP Assignment Card
+            // 3. Emergency SOS Dispatch Card (High Priority Alert)
+            if (activeSOS != null) ...[
+              _buildActiveSOSCard(policeProvider, activeSOS),
+              const SizedBox(height: 16),
+            ],
+
+            // 4. Active PRP Assignment Card
             _buildAssignmentCard(policeProvider, assignment),
 
             const SizedBox(height: 16),
 
-            // 4. Interactive Tactical Map Container
-            _buildMapSection(mapCenter, officerLatLng, prpLatLng, assignment),
+            // 5. Interactive Tactical Map Container
+            _buildMapSection(mapCenter, officerLatLng, prpLatLng, sosLatLng, assignment),
 
             const SizedBox(height: 16),
 
-            // 5. Emergency SOS Monitoring Placeholder Card
-            _buildSOSPlaceholderCard(),
+            // 6. SOS Channel Monitoring Card (Standby)
+            if (activeSOS == null)
+              _buildSOSPlaceholderCard(),
           ],
         ),
       ),
@@ -549,6 +561,7 @@ class _PoliceHomeScreenState extends State<PoliceHomeScreen> {
     LatLng mapCenter,
     LatLng? officerLatLng,
     LatLng? prpLatLng,
+    LatLng? sosLatLng,
     PatrolAssignmentModel? assignment,
   ) {
     return Container(
@@ -620,6 +633,27 @@ class _PoliceHomeScreenState extends State<PoliceHomeScreen> {
                         child: const Icon(Icons.flag, color: Colors.white, size: 20),
                       ),
                     ),
+                  if (sosLatLng != null)
+                    Marker(
+                      point: sosLatLng,
+                      width: 40,
+                      height: 40,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE11D48),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0xFFF43F5E),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.emergency, color: Colors.white, size: 22),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -633,6 +667,233 @@ class _PoliceHomeScreenState extends State<PoliceHomeScreen> {
               onPressed: () => _recenterMap(mapCenter),
               child: const Icon(Icons.my_location),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveSOSCard(PoliceProvider policeProvider, SOSModel sos) {
+    Color statusColor;
+    String statusText;
+
+    switch (sos.status) {
+      case 'ASSIGNED':
+        statusColor = const Color(0xFFF59E0B);
+        statusText = 'EMERGENCY DISPATCHED';
+        break;
+      case 'ACCEPTED':
+        statusColor = const Color(0xFF3B82F6);
+        statusText = 'ACCEPTED - STANDBY TO DEPART';
+        break;
+      case 'EN_ROUTE':
+        statusColor = const Color(0xFF8B5CF6);
+        statusText = 'EN ROUTE TO CITIZEN';
+        break;
+      case 'ARRIVED':
+        statusColor = const Color(0xFF10B981);
+        statusText = 'ARRIVED ON-SCENE';
+        break;
+      default:
+        statusColor = const Color(0xFFEF4444);
+        statusText = sos.status;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE11D48), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE11D48).withValues(alpha: 0.2),
+            blurRadius: 12,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE11D48),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.emergency, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'CRITICAL SOS ALERT',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFDA4AF),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: statusColor),
+                ),
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (sos.citizenName != null || sos.citizenPhone != null) ...[
+            Text(
+              'Citizen: ${sos.citizenName ?? "Anonymous"} • Phone: ${sos.citizenPhone ?? "N/A"}',
+              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+          ],
+          if (sos.notes != null && sos.notes!.isNotEmpty) ...[
+            Text(
+              'Notes: ${sos.notes}',
+              style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+          ],
+          Text(
+            'Coordinates: ${sos.latitude.toStringAsFixed(5)}, ${sos.longitude.toStringAsFixed(5)}',
+            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontFamily: 'monospace'),
+          ),
+          if (sos.distanceMeters != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Distance: ${(sos.distanceMeters! / 1000).toStringAsFixed(2)} km  •  ETA: ${sos.estimatedDurationSeconds != null ? (sos.estimatedDurationSeconds! / 60).toStringAsFixed(0) : "N/A"} mins',
+                style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          const SizedBox(height: 14),
+
+          // Action buttons
+          if (sos.status == 'ASSIGNED')
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text('Accept Emergency Dispatch'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE11D48),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: policeProvider.isActionInProgress
+                    ? null
+                    : () => policeProvider.acceptSOS(sos.id),
+              ),
+            ),
+
+          if (sos.status == 'ACCEPTED')
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.navigation_outlined),
+                label: const Text('Depart & Mark EN ROUTE'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: policeProvider.isActionInProgress
+                    ? null
+                    : () => policeProvider.enRouteSOS(sos.id),
+              ),
+            ),
+
+          if (sos.status == 'EN_ROUTE')
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.location_on),
+                label: const Text('Mark ARRIVED On-Scene'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: policeProvider.isActionInProgress
+                    ? null
+                    : () => policeProvider.arrivedSOS(sos.id),
+              ),
+            ),
+
+          if (sos.status == 'ARRIVED')
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.task_alt),
+                label: const Text('Resolve Emergency Incident'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: policeProvider.isActionInProgress
+                    ? null
+                    : () => _showResolveDialog(context, policeProvider, sos.id),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showResolveDialog(
+    BuildContext context,
+    PoliceProvider policeProvider,
+    int sosId,
+  ) {
+    final notesController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: const Text('Resolve SOS Incident', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: notesController,
+          maxLines: 3,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Enter incident resolution notes / outcome...',
+            hintStyle: TextStyle(color: Color(0xFF64748B)),
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              policeProvider.resolveSOS(sosId, notes: notesController.text.trim());
+            },
+            child: const Text('Confirm Resolution'),
           ),
         ],
       ),

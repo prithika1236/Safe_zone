@@ -1,15 +1,77 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/citizen_provider.dart';
 
-class SOSStatusScreen extends StatelessWidget {
+class SOSStatusScreen extends StatefulWidget {
   const SOSStatusScreen({super.key});
+
+  @override
+  State<SOSStatusScreen> createState() => _SOSStatusScreenState();
+}
+
+class _SOSStatusScreenState extends State<SOSStatusScreen> {
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Poll active SOS status every 3 seconds while emergency screen is open
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        Provider.of<CitizenProvider>(context, listen: false).fetchActiveSOS();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final citizenProvider = Provider.of<CitizenProvider>(context);
     final location = citizenProvider.currentLocation;
     final contacts = citizenProvider.emergencyContacts;
+    final activeSOS = citizenProvider.activeSOS;
+
+    String statusDisplay = citizenProvider.sosStatus;
+    Color statusBadgeColor = const Color(0xFFE11D48);
+
+    if (activeSOS != null) {
+      switch (activeSOS.status) {
+        case 'PENDING':
+          statusDisplay = 'Awaiting Patrol Assignment...';
+          statusBadgeColor = const Color(0xFFF59E0B);
+          break;
+        case 'ASSIGNED':
+          statusDisplay = 'Patrol Dispatched';
+          statusBadgeColor = const Color(0xFF3B82F6);
+          break;
+        case 'ACCEPTED':
+          statusDisplay = 'Patrol Responding';
+          statusBadgeColor = const Color(0xFF2563EB);
+          break;
+        case 'EN_ROUTE':
+          statusDisplay = 'Patrol EN ROUTE to your location';
+          statusBadgeColor = const Color(0xFF8B5CF6);
+          break;
+        case 'ARRIVED':
+          statusDisplay = 'Patrol ARRIVED on-scene';
+          statusBadgeColor = const Color(0xFF10B981);
+          break;
+        case 'RESOLVED':
+          statusDisplay = 'Emergency RESOLVED';
+          statusBadgeColor = const Color(0xFF059669);
+          break;
+        case 'CANCELLED':
+          statusDisplay = 'Emergency CANCELLED';
+          statusBadgeColor = const Color(0xFF64748B);
+          break;
+      }
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF4C0519), // Deep emergency crimson
@@ -42,8 +104,8 @@ class SOSStatusScreen extends StatelessWidget {
               // 1. Pulsing Distress Beacon Header
               Center(
                 child: Container(
-                  width: 110,
-                  height: 110,
+                  width: 100,
+                  height: 100,
                   decoration: BoxDecoration(
                     color: const Color(0xFFE11D48),
                     shape: BoxShape.circle,
@@ -58,17 +120,17 @@ class SOSStatusScreen extends StatelessWidget {
                   child: const Center(
                     child: Icon(
                       Icons.emergency,
-                      size: 60,
+                      size: 54,
                       color: Colors.white,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
               const Text(
-                'Distress Broadcast in Progress',
+                'Distress Broadcast Active',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 22,
@@ -77,19 +139,75 @@ class SOSStatusScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                'Status: ${citizenProvider.sosStatus}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFDA4AF),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusBadgeColor.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: statusBadgeColor),
+                  ),
+                  child: Text(
+                    statusDisplay,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: statusBadgeColor == const Color(0xFF64748B)
+                          ? const Color(0xFFCBD5E1)
+                          : const Color(0xFFFDA4AF),
+                    ),
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // 2. Geolocation Telemetry Card
+              // 2. Dispatch / Responder Status Card
+              if (activeSOS != null && activeSOS.patrolAssigned)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B).withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF38BDF8)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.shield_outlined, color: Color(0xFF38BDF8), size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Assigned Police Patrol Unit',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Call Sign: ${activeSOS.patrolCallSign ?? "PATROL UNIT"}',
+                        style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      if (activeSOS.distanceMeters != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            'Distance: ${(activeSOS.distanceMeters! / 1000).toStringAsFixed(2)} km  •  ETA: ${activeSOS.estimatedDurationSeconds != null ? (activeSOS.estimatedDurationSeconds! / 60).toStringAsFixed(0) : "N/A"} mins',
+                            style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 12),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+              // 3. Geolocation Telemetry Card
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -144,7 +262,7 @@ class SOSStatusScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // 3. Emergency Contacts Notified List
+              // 4. Emergency Contacts Notified List
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -209,7 +327,7 @@ class SOSStatusScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // 4. Cancel / False Alarm Disarm Button
+              // 5. Cancel / False Alarm Disarm Button
               ElevatedButton.icon(
                 icon: const Icon(Icons.cancel_outlined),
                 label: const Text(
@@ -225,9 +343,11 @@ class SOSStatusScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onPressed: () {
-                  citizenProvider.cancelSOS();
-                  Navigator.of(context).pop();
+                onPressed: () async {
+                  await citizenProvider.cancelSOS();
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ],

@@ -3,6 +3,7 @@ import '../core/api_client.dart';
 import '../core/storage_service.dart';
 import '../models/assignment_model.dart';
 import '../models/location_status.dart';
+import '../models/sos_model.dart';
 import '../services/location_service.dart';
 
 class PoliceProvider extends ChangeNotifier {
@@ -11,6 +12,7 @@ class PoliceProvider extends ChangeNotifier {
   final LocationService _locationService;
 
   PatrolAssignmentModel? _activeAssignment;
+  SOSModel? _activeSOS;
   bool _isOnDuty = true;
   LocationResult? _currentLocation;
   bool _isLoading = false;
@@ -23,6 +25,7 @@ class PoliceProvider extends ChangeNotifier {
   }
 
   PatrolAssignmentModel? get activeAssignment => _activeAssignment;
+  SOSModel? get activeSOS => _activeSOS;
   bool get isOnDuty => _isOnDuty;
   LocationResult? get currentLocation => _currentLocation;
   bool get isLoading => _isLoading;
@@ -37,11 +40,42 @@ class PoliceProvider extends ChangeNotifier {
 
     await Future.wait([
       fetchCurrentAssignment(silent: true),
+      fetchActiveSOS(silent: true),
       updateLocation(silent: true),
     ]);
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> fetchActiveSOS({bool silent = false}) async {
+    if (!silent) {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+    }
+
+    try {
+      final response = await _apiClient.get('/police/sos/active');
+      if (response != null && response is Map<String, dynamic>) {
+        _activeSOS = SOSModel.fromJson(response);
+      } else {
+        _activeSOS = null;
+      }
+    } on ApiException catch (e) {
+      if (e.statusCode != 404) {
+        _errorMessage = e.message;
+      } else {
+        _activeSOS = null;
+      }
+    } catch (_) {
+      _errorMessage = 'Failed to check emergency SOS alerts.';
+    } finally {
+      if (!silent) {
+        _isLoading = false;
+        notifyListeners();
+      }
+    }
   }
 
   Future<void> fetchCurrentAssignment({bool silent = false}) async {
@@ -154,6 +188,123 @@ class PoliceProvider extends ChangeNotifier {
       return false;
     } catch (_) {
       _errorMessage = 'Failed to complete assignment.';
+      _isActionInProgress = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // --- Police Emergency SOS Actions ---
+
+  Future<bool> acceptSOS(int sosId) async {
+    _isActionInProgress = true;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.post('/police/sos/$sosId/accept');
+      if (response != null && response is Map<String, dynamic>) {
+        _activeSOS = SOSModel.fromJson(response);
+      }
+      _successMessage = 'Emergency SOS ACCEPTED. Please proceed to citizen immediately.';
+      _isActionInProgress = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _isActionInProgress = false;
+      notifyListeners();
+      return false;
+    } catch (_) {
+      _errorMessage = 'Failed to accept SOS emergency.';
+      _isActionInProgress = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> enRouteSOS(int sosId) async {
+    _isActionInProgress = true;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.post('/police/sos/$sosId/en-route');
+      if (response != null && response is Map<String, dynamic>) {
+        _activeSOS = SOSModel.fromJson(response);
+      }
+      _successMessage = 'Emergency status updated to EN ROUTE.';
+      _isActionInProgress = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _isActionInProgress = false;
+      notifyListeners();
+      return false;
+    } catch (_) {
+      _errorMessage = 'Failed to update EN ROUTE status.';
+      _isActionInProgress = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> arrivedSOS(int sosId) async {
+    _isActionInProgress = true;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.post('/police/sos/$sosId/arrived');
+      if (response != null && response is Map<String, dynamic>) {
+        _activeSOS = SOSModel.fromJson(response);
+      }
+      _successMessage = 'Marked ARRIVED on-scene with citizen.';
+      _isActionInProgress = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _isActionInProgress = false;
+      notifyListeners();
+      return false;
+    } catch (_) {
+      _errorMessage = 'Failed to mark ARRIVED status.';
+      _isActionInProgress = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> resolveSOS(int sosId, {String? notes}) async {
+    _isActionInProgress = true;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiClient.post(
+        '/police/sos/$sosId/resolve',
+        body: {'resolution_notes': notes},
+      );
+      if (response != null && response is Map<String, dynamic>) {
+        _activeSOS = null;
+      }
+      _successMessage = 'SOS Incident RESOLVED. Patrol unit returned to AVAILABLE.';
+      _isActionInProgress = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _isActionInProgress = false;
+      notifyListeners();
+      return false;
+    } catch (_) {
+      _errorMessage = 'Failed to resolve SOS incident.';
       _isActionInProgress = false;
       notifyListeners();
       return false;
