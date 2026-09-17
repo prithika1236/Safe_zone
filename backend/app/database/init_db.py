@@ -89,15 +89,15 @@ async def init_database():
                 user_id=citizen.id,
                 name="David Citizen",
                 phone_number="+91 9876543210",
-                relationship="Spouse",
-                is_primary=True,
+                relationship_type="Spouse",
+                is_active=True,
             )
             ec2 = EmergencyContact(
                 user_id=citizen.id,
                 name="Mary Citizen",
                 phone_number="+91 9876543211",
-                relationship="Parent",
-                is_primary=False,
+                relationship_type="Parent",
+                is_active=True,
             )
             db.add_all([ec1, ec2])
 
