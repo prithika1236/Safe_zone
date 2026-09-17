@@ -1,4 +1,4 @@
-"""Optimization, risk scoring, and PRP candidate generation algorithms for SafeZone."""
+"""Optimization, risk scoring, coverage modeling, and PRP solver algorithms for SafeZone."""
 
 from app.optimization.candidate_generator import (
     CandidateGenerationConfig,
@@ -6,6 +6,17 @@ from app.optimization.candidate_generator import (
     CandidateStrategy,
     PredefinedLocation,
     generate_prp_candidates,
+)
+from app.optimization.coverage import (
+    CandidateLocation,
+    CoverageMatrix,
+    DemandPoint,
+    build_coverage_matrix,
+)
+from app.optimization.prp_optimizer import (
+    PRPOptimizationResult,
+    SelectedPRPItem,
+    optimize_prp_coverage,
 )
 from app.optimization.risk_scoring import (
     DEFAULT_SEVERITY_MAPPING,
@@ -38,4 +49,13 @@ __all__ = [
     "CandidateGenerationConfig",
     "CandidatePRP",
     "generate_prp_candidates",
+    # Coverage Modeling
+    "DemandPoint",
+    "CandidateLocation",
+    "CoverageMatrix",
+    "build_coverage_matrix",
+    # OR-Tools PRP Optimizer
+    "SelectedPRPItem",
+    "PRPOptimizationResult",
+    "optimize_prp_coverage",
 ]

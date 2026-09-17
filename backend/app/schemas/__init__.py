@@ -20,6 +20,16 @@ from app.schemas.help_point import (
     SafeHelpPointResponse,
     SafeHelpPointUpdateRequest,
 )
+from app.schemas.optimization import (
+    OptimizationResultResponse,
+    OptimizationRunRequest,
+    PRPLocationResponse,
+    PRPStatusUpdateRequest,
+    PaginatedOptimizationRunsResponse,
+    PaginatedPRPLocationsResponse,
+    SelectedPRPResponse,
+    UncoveredDemandPointResponse,
+)
 from app.schemas.patrol import (
     OperationalStatusSummary,
     PaginatedPatrolUnitsResponse,
@@ -86,4 +96,13 @@ __all__ = [
     "CandidateGenerationConfigSchema",
     "CandidatePRPResponse",
     "CandidateGenerationRequest",
+    # Optimization
+    "OptimizationRunRequest",
+    "SelectedPRPResponse",
+    "UncoveredDemandPointResponse",
+    "OptimizationResultResponse",
+    "PRPLocationResponse",
+    "PRPStatusUpdateRequest",
+    "PaginatedOptimizationRunsResponse",
+    "PaginatedPRPLocationsResponse",
 ]

@@ -3,6 +3,7 @@ from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
 from app.api.crimes import router as crimes_router
 from app.api.help_points import router as help_points_router
+from app.api.optimization import router as optimization_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -17,3 +18,6 @@ api_router.include_router(crimes_router)
 
 # Safe Help Points endpoints
 api_router.include_router(help_points_router)
+
+# Admin PRP Optimization endpoints
+api_router.include_router(optimization_router)

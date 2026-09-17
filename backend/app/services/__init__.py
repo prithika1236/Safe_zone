@@ -13,6 +13,7 @@ from app.services.location_service import (
     is_point_in_bbox,
     validate_coordinates,
 )
+from app.services.optimization_service import OptimizationService
 from app.services.patrol_service import PatrolService
 from app.services.risk_service import RiskService
 
@@ -24,6 +25,7 @@ __all__ = [
     "LocationService",
     "RoutingService",
     "RiskService",
+    "OptimizationService",
     "Coordinate",
     "BoundingBox",
     "RouteResult",
