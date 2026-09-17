@@ -1,61 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'core/api_client.dart';
+import 'core/storage_service.dart';
+import 'providers/auth_provider.dart';
+import 'providers/police_provider.dart';
+import 'screens/login_screen.dart';
+import 'screens/police_home_screen.dart';
+import 'services/location_service.dart';
 
-void main() {
-  runApp(const SafeZoneApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final sharedPrefs = await SharedPreferences.getInstance();
+  final storageService = StorageService(sharedPrefs);
+  final apiClient = ApiClient(storageService);
+  final locationService = LocationService();
+
+  runApp(SafeZoneApp(
+    storageService: storageService,
+    apiClient: apiClient,
+    locationService: locationService,
+  ));
 }
 
 class SafeZoneApp extends StatelessWidget {
-  const SafeZoneApp({super.key});
+  final StorageService storageService;
+  final ApiClient apiClient;
+  final LocationService locationService;
+
+  const SafeZoneApp({
+    super.key,
+    required this.storageService,
+    required this.apiClient,
+    required this.locationService,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SafeZone',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E3A8A),
-          brightness: Brightness.light,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(apiClient, storageService),
         ),
-        useMaterial3: true,
+        ChangeNotifierProvider(
+          create: (_) => PoliceProvider(apiClient, storageService, locationService),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'SafeZone Police',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF1E3A8A),
+            brightness: Brightness.dark,
+          ),
+          scaffoldBackgroundColor: const Color(0xFF0F172A),
+        ),
+        home: const AuthGatekeeper(),
       ),
-      home: const SafeZoneHomePage(),
     );
   }
 }
 
-class SafeZoneHomePage extends StatelessWidget {
-  const SafeZoneHomePage({super.key});
+class AuthGatekeeper extends StatelessWidget {
+  const AuthGatekeeper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('SafeZone'),
-        centerTitle: true,
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.shield_outlined,
-              size: 64,
-              color: Color(0xFF1E3A8A),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'SafeZone Mobile Application',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'AI-Assisted Police Patrol & Emergency Response',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    if (!authProvider.isInitialized) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0F172A),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
         ),
-      ),
-    );
+      );
+    }
+
+    if (authProvider.isAuthenticated && authProvider.isPolice) {
+      return const PoliceHomeScreen();
+    }
+
+    return const LoginScreen();
   }
 }
