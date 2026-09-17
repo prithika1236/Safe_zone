@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     BACKEND_HOST: str = "0.0.0.0"
     BACKEND_PORT: int = 8000
 
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/safezone"
+    # Database (Defaults to local SQLite for frictionless zero-config review & execution)
+    DATABASE_URL: str = "sqlite+aiosqlite:///./safezone.db"
 
     # Security & JWT
     JWT_SECRET_KEY: str = "change_this_to_a_secure_random_secret_key_in_production"
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+    ALLOWED_ORIGINS: str = "*"
 
     # External Integrations
     FIREBASE_CREDENTIALS_PATH: str | None = None
