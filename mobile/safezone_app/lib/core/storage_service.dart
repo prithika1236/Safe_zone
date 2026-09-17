@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/emergency_contact_model.dart';
 import '../models/user_model.dart';
 
-/// Secure token and session persistence using SharedPreferences.
+/// Secure token, emergency contacts, and session persistence using SharedPreferences.
 class StorageService {
   static const String _keyToken = 'safezone_jwt_token';
   static const String _keyRole = 'safezone_user_role';
   static const String _keyUser = 'safezone_user_json';
   static const String _keyDuty = 'safezone_police_duty_status';
+  static const String _keyEmergencyContacts = 'safezone_emergency_contacts_json';
 
   final SharedPreferences _prefs;
 
@@ -53,6 +55,25 @@ class StorageService {
 
   Future<void> setDutyStatus(bool onDuty) async {
     await _prefs.setBool(_keyDuty, onDuty);
+  }
+
+  List<EmergencyContactModel> getEmergencyContacts() {
+    final raw = _prefs.getString(_keyEmergencyContacts);
+    if (raw == null) return [];
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded
+          .map((item) =>
+              EmergencyContactModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveEmergencyContacts(List<EmergencyContactModel> contacts) async {
+    final encoded = jsonEncode(contacts.map((c) => c.toJson()).toList());
+    await _prefs.setString(_keyEmergencyContacts, encoded);
   }
 
   Future<void> clearSession() async {

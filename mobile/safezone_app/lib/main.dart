@@ -4,7 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/api_client.dart';
 import 'core/storage_service.dart';
 import 'providers/auth_provider.dart';
+import 'providers/citizen_provider.dart';
 import 'providers/police_provider.dart';
+import 'screens/citizen_home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/police_home_screen.dart';
 import 'services/location_service.dart';
@@ -46,9 +48,12 @@ class SafeZoneApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => PoliceProvider(apiClient, storageService, locationService),
         ),
+        ChangeNotifierProvider(
+          create: (_) => CitizenProvider(apiClient, storageService, locationService),
+        ),
       ],
       child: MaterialApp(
-        title: 'SafeZone Police',
+        title: 'SafeZone Mobile',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
@@ -80,8 +85,11 @@ class AuthGatekeeper extends StatelessWidget {
       );
     }
 
-    if (authProvider.isAuthenticated && authProvider.isPolice) {
-      return const PoliceHomeScreen();
+    if (authProvider.isAuthenticated) {
+      if (authProvider.isPolice) {
+        return const PoliceHomeScreen();
+      }
+      return const CitizenHomeScreen();
     }
 
     return const LoginScreen();

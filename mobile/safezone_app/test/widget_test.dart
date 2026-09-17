@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:safezone_app/core/api_client.dart';
@@ -11,7 +10,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('SafeZone app launches and displays LoginScreen by default', (WidgetTester tester) async {
+  testWidgets('SafeZone app launches and displays LoginScreen with Sign In and Sign Up tabs', (WidgetTester tester) async {
     final prefs = await SharedPreferences.getInstance();
     final storage = StorageService(prefs);
     final apiClient = ApiClient(storage);
@@ -25,13 +24,13 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Verify Police Portal branding and login inputs exist
-    expect(find.text('SafeZone Police Portal'), findsOneWidget);
-    expect(find.text('Sign In to Terminal'), findsOneWidget);
-    expect(find.byType(TextFormField), findsNWidgets(2));
+    // Verify SafeZone Portal branding and tabs exist
+    expect(find.text('SafeZone Portal'), findsOneWidget);
+    expect(find.text('Sign In'), findsNWidgets(2)); // Tab and Button
+    expect(find.text('Citizen Sign Up'), findsOneWidget);
   });
 
-  testWidgets('Login form validation triggers on empty input', (WidgetTester tester) async {
+  testWidgets('Switching to Citizen Sign Up tab renders registration fields', (WidgetTester tester) async {
     final prefs = await SharedPreferences.getInstance();
     final storage = StorageService(prefs);
     final apiClient = ApiClient(storage);
@@ -45,13 +44,12 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Tap submit button without entering credentials
-    final submitButton = find.text('Sign In to Terminal');
-    await tester.tap(submitButton);
+    // Tap Citizen Sign Up tab
+    final signUpTab = find.text('Citizen Sign Up');
+    await tester.tap(signUpTab);
     await tester.pumpAndSettle();
 
-    // Verify validation errors appear
-    expect(find.text('Please enter officer email'), findsOneWidget);
-    expect(find.text('Please enter password'), findsOneWidget);
+    // Verify register button exists
+    expect(find.text('Create Citizen Account'), findsOneWidget);
   });
 }

@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:safezone_app/models/assignment_model.dart';
+import 'package:safezone_app/models/emergency_contact_model.dart';
+import 'package:safezone_app/models/help_point_model.dart';
 import 'package:safezone_app/models/location_status.dart';
 import 'package:safezone_app/models/user_model.dart';
 
@@ -36,19 +38,19 @@ void main() {
       final json = {
         'access_token': 'test_jwt_token_123',
         'token_type': 'bearer',
-        'role': 'POLICE',
+        'role': 'CITIZEN',
         'user': {
-          'id': 10,
-          'email': 'officer@police.gov',
-          'full_name': 'Officer John Doe',
-          'role': 'POLICE',
+          'id': 12,
+          'email': 'citizen@example.com',
+          'full_name': 'Jane Citizen',
+          'role': 'CITIZEN',
         }
       };
 
       final loginRes = LoginResponse.fromJson(json);
       expect(loginRes.accessToken, 'test_jwt_token_123');
-      expect(loginRes.role, 'POLICE');
-      expect(loginRes.user.id, 10);
+      expect(loginRes.role, 'CITIZEN');
+      expect(loginRes.user.id, 12);
     });
   });
 
@@ -89,6 +91,56 @@ void main() {
       expect(assignment.patrolUnit!.callSign, 'PATROL-101');
       expect(assignment.prp!.priorityScore, 8.5);
       expect(assignment.prp!.coverageRadiusMeters, 1500);
+    });
+  });
+
+  group('EmergencyContactModel Tests', () {
+    test('EmergencyContactModel serialization and copyWith', () {
+      final contact = EmergencyContactModel(
+        id: '1',
+        name: 'Sarah Connor',
+        phoneNumber: '+1-555-0199',
+        relationship: 'Family',
+        isPrimary: true,
+      );
+
+      final json = contact.toJson();
+      expect(json['name'], 'Sarah Connor');
+      expect(json['is_primary'], true);
+
+      final parsed = EmergencyContactModel.fromJson(json);
+      expect(parsed.name, 'Sarah Connor');
+      expect(parsed.phoneNumber, '+1-555-0199');
+      expect(parsed.isPrimary, true);
+
+      final updated = parsed.copyWith(name: 'Sarah J. Connor');
+      expect(updated.name, 'Sarah J. Connor');
+      expect(updated.phoneNumber, '+1-555-0199');
+    });
+  });
+
+  group('HelpPointModel Tests', () {
+    test('HelpPointModel parse JSON correctly', () {
+      final json = {
+        'id': 3,
+        'name': 'MG Road Police Station',
+        'point_type': 'POLICE_STATION',
+        'latitude': 12.9750,
+        'longitude': 77.6050,
+        'is_24_7': true,
+        'is_verified': true,
+        'is_active': true,
+        'contact_phone': '080-22942555',
+        'distance_meters': 1200.0,
+      };
+
+      final hp = HelpPointModel.fromJson(json);
+      expect(hp.id, 3);
+      expect(hp.name, 'MG Road Police Station');
+      expect(hp.pointType, 'POLICE_STATION');
+      expect(hp.is24_7, true);
+      expect(hp.isVerified, true);
+      expect(hp.distanceMeters, 1200.0);
     });
   });
 
